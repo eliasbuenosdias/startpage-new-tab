@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Startpage New Tab",
-  "version": "1.2.0",
-  "description": "Opens www.startpage.com in every new tab. Works on Opera GX, where chrome_url_overrides is ignored.",
+  "version": "1.3.0",
+  "description": "Opens www.startpage.com in every new tab and makes it the default search engine. Built for Opera GX.",
   "permissions": ["tabs"],
   "background": {
     "service_worker": "background.js"
@@ -14,5 +14,16 @@
   },
   "chrome_url_overrides": {
     "newtab": "newtab.html"
+  },
+  "chrome_settings_overrides": {
+    "search_provider": {
+      "name": "Startpage",
+      "keyword": "sp",
+      "search_url": "https://www.startpage.com/do/dsearch?query={searchTerms}",
+      "suggest_url": "https://www.startpage.com/osuggestions?q={searchTerms}",
+      "favicon_url": "https://www.startpage.com/favicon.ico",
+      "encoding": "UTF-8",
+      "is_default": true
+    }
   }
 }

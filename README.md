@@ -44,6 +44,7 @@ This project routes around the limitation:
 - ⚡ **Instant redirect** via a background service worker (`chrome.tabs.onCreated`)
 - 🕵️ **Minimal permissions** — only `tabs` (needed to detect the new tab and navigate it)
 - 🧩 **No content scripts, no remote code, no analytics**
+- 🔎 **Default search engine declaration** — honoured by Chrome, Edge, Brave and Vivaldi (Opera GX blocks it)
 - 🖥️ **Works on any Chromium browser** — Chrome, Edge, Brave, Vivaldi — as a bonus
 - 🪶 **Under 1 MB**, three small source files
 
@@ -73,7 +74,30 @@ That's it. Press `Cmd+T` / `Ctrl+T` and you'll land on Startpage.
 ### 3. Recommended browser settings
 
 - **On startup** → `opera://settings` → *Continue where you left off* — so your previous tabs come back instead of being replaced.
-- **Search engine** → add a custom engine: name `Startpage`, keyword `sp`, URL `https://www.startpage.com/do/dsearch?query=%s`.
+- **Search engine** → Opera GX won't let a custom engine become the default (see below), so add Startpage and use its keyword: name `Startpage`, keyword `sp`, URL `https://www.startpage.com/do/dsearch?query=%s`. Then type `sp` + your query in the address bar.
+
+---
+
+## 🔎 Default search engine
+
+This extension ships a `chrome_settings_overrides.search_provider` block with `is_default: true`. It works on **Chrome, Edge, Brave and Vivaldi**.
+
+Opera GX ignores it, on purpose:
+
+- ❌ `chrome_url_overrides` → the manifest is rejected: *"'chrome_url_overrides' is not allowed for specified extension ID."*
+- ❌ `chrome_settings_overrides.search_provider` → the engine is never registered in `chrome://settings/searchEngines`
+- ❌ Custom engines → the *Make default* action is rendered `disabled` in Opera's own settings UI
+- ❌ Editing `default_search_provider.guid` in the profile → Opera resets it to Google on launch
+
+So on Opera GX the default engine stays Google. Practical workarounds:
+
+| Option | Effort |
+| --- | --- |
+| Use the `sp` keyword in the address bar | ✅ Native, works today |
+| Start every session on Startpage (startup page / this extension) | ✅ Native |
+| Switch to a browser that allows custom defaults | 🔁 Brave/Chrome/Edge |
+
+> 💡 If Opera ever lifts this restriction, the manifest already carries the right declaration — nothing else to change.
 
 ---
 
