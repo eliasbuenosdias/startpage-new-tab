@@ -4,13 +4,13 @@
 
 # 🔒 Startpage New Tab
 
-**Every new tab. Private search. Zero noise.**
-A tiny Manifest V3 extension that sends every new tab to [startpage.com](https://www.startpage.com) — built for **Opera GX**, where the standard `chrome_url_overrides` trick simply doesn't work.
+**Every new tab. Every search. Private by default.**
+A tiny Manifest V3 extension that sends every new tab **and every address-bar search** to [startpage.com](https://www.startpage.com) — built for **Opera GX**, where the standard `chrome_url_overrides` trick simply doesn't work.
 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-0f766e?style=flat-square&logo=googlechrome&logoColor=white)
 ![Opera GX](https://img.shields.io/badge/Opera%20GX-supported-ff1b2d?style=flat-square&logo=opera&logoColor=white)
 ![Chromium](https://img.shields.io/badge/Chromium-compatible-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
-![Permissions](https://img.shields.io/badge/permissions-tabs%20only-34d399?style=flat-square)
+![Permissions](https://img.shields.io/badge/permissions-tabs%20%2B%20webNavigation-34d399?style=flat-square)
 ![Size](https://img.shields.io/badge/size-%3C%201%20MB-4b5563?style=flat-square)
 
 </div>
@@ -25,13 +25,14 @@ Opera GX is Chromium-based, so you'd expect this to work:
 { "chrome_url_overrides": { "newtab": "newtab.html" } }
 ```
 
-It doesn't. Opera overrides the new tab page with its own Speed Dial and **ignores extension overrides entirely**. No setting, flag, or extension from the Chrome Web Store can change that.
+It doesn't. Opera overrides the new tab page with its own Speed Dial and **ignores extension overrides entirely**. No setting, flag, or extension from the Chrome Web Store can change that. The same goes for the search engine: Opera only lets its partner engines be the default, and custom ones get a disabled *Make default* button.
 
-This project routes around the limitation:
+This project routes around both limitations:
 
 | Browser behaviour | This extension |
 | --- | --- |
 | `Cmd/Ctrl+T` opens `chrome://startpageshared/` | A service worker spots it instantly and navigates to Startpage |
+| Address bar searches go to Google (forced default) | The search navigation is rewritten to Startpage before it loads |
 | Startup page can be set natively | Left alone — your session restore keeps working ✅ |
 
 > 🧠 The internal URL `chrome://startpageshared/` was found by tracing `chrome.tabs` events — that's the piece most "new tab redirect" extensions miss for Opera.
@@ -68,14 +69,15 @@ cd startpage-new-tab
 4. Select the `startpage-new-tab` **folder** (not a file inside it)
 5. Make sure the **Startpage New Tab** card is switched on 🟢
 
-That's it. Press `Cmd+T` / `Ctrl+T` and you'll land on Startpage.
+That's it. Press `Cmd+T` / `Ctrl+T` and you'll land on Startpage. Type something in the address bar and you'll get Startpage results.
 
 > 🍎 Tip: in the file picker, press `Cmd+Shift+G` and paste the folder path to jump straight there.
+> 🔄 After updating the files, hit **⟳ reload** on the extension card. If new permissions were added, Opera may ask you to review and approve them.
 
 ### 3. Recommended browser settings
 
 - **On startup** → `opera://settings` → *Continue where you left off* — so your previous tabs come back instead of being replaced.
-- **Search engine** → Opera GX won't let a custom engine become the default (see below), so add Startpage and use its keyword: name `Startpage`, keyword `sp`, URL `https://www.startpage.com/do/dsearch?query=%s`. Then type `sp` + your query in the address bar.
+- **Search keyword (optional)** → add a custom engine: name `Startpage`, keyword `sp`, URL `https://www.startpage.com/do/dsearch?query=%s`. Handy when you want to force Startpage explicitly.
 
 ---
 
@@ -122,6 +124,8 @@ Address-bar searches take a second path:
                     └─> 🔒 Startpage results
 ```
 
+Covered Google search domains are declared in `manifest.json` (`google.com`, `google.es`, `google.com.mx`, `google.de`, `google.co.uk`, …). Add your local one if it's missing.
+
 `background.js` keeps a list of the internal new-tab URLs used across Chromium forks:
 
 ```js
@@ -156,8 +160,8 @@ No content scripts, no analytics, no remote code, and the query never reaches Go
 
 ```text
 startpage-new-tab/
-├── manifest.json      # Manifest V3, tabs permission, icons
-├── background.js      # Service worker: detects new tabs and redirects them
+├── manifest.json      # Manifest V3, permissions, icons, search override
+├── background.js      # Service worker: new-tab redirect + search rewrite
 ├── newtab.html        # Fallback override page (non-Opera browsers)
 ├── logo.svg           # Logo source (vector)
 └── icons/
@@ -185,6 +189,8 @@ startpage-new-tab/
 ## ⚠️ Limitations
 
 - 👀 A brief flash of the Speed Dial may appear before the redirect — Chromium's tab lifecycle makes it unavoidable.
+- 🔎 The address bar may show the Google URL for a moment before landing on Startpage. The request itself is replaced client-side, so Google never receives the query.
+- 🧭 Only Google search navigations are rewritten. If you switch Opera's default to Bing, Yahoo or DuckDuckGo, add a rule for it in `background.js`.
 - 🕶️ Private/incognito behaviour is restricted by the browser itself.
 - 🧪 Internal URLs can change between Opera releases. If a future version breaks this, run the service worker console and look for the new `pendingUrl`.
 
