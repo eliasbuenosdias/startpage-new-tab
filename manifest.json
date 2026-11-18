@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Startpage New Tab",
+  "version": "1.2.0",
+  "description": "Opens www.startpage.com in every new tab. Works on Opera GX, where chrome_url_overrides is ignored.",
+  "permissions": ["tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}
