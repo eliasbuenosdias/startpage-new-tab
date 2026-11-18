@@ -41,8 +41,9 @@ This project routes around the limitation:
 ## ✨ Features
 
 - 🔐 **Startpage on every new tab** — no Speed Dial leftovers, no tracking
-- ⚡ **Instant redirect** via a background service worker (`chrome.tabs.onCreated`)
-- 🕵️ **Minimal permissions** — only `tabs` (needed to detect the new tab and navigate it)
+- 🔎 **Address-bar searches go to Startpage** — Opera's default engine is Google, so search navigations are rewritten to Startpage before the page loads
+- ⚡ **Instant redirect** via a background service worker (`chrome.tabs` + `webNavigation`)
+- 🕵️ **Minimal permissions** — `tabs` + `webNavigation`, and host access only for Google search domains so the rewrite can read the query
 - 🧩 **No content scripts, no remote code, no analytics**
 - 🔎 **Default search engine declaration** — honoured by Chrome, Edge, Brave and Vivaldi (Opera GX blocks it)
 - 🖥️ **Works on any Chromium browser** — Chrome, Edge, Brave, Vivaldi — as a bonus
@@ -89,15 +90,15 @@ Opera GX ignores it, on purpose:
 - ❌ Custom engines → the *Make default* action is rendered `disabled` in Opera's own settings UI
 - ❌ Editing `default_search_provider.guid` in the profile → Opera resets it to Google on launch
 
-So on Opera GX the default engine stays Google. Practical workarounds:
+So on Opera GX the default engine stays Google. This extension doesn't change that setting — it simply rewrites the search navigations, which gives you the same end result:
 
-| Option | Effort |
+| Where you type | What happens |
 | --- | --- |
-| Use the `sp` keyword in the address bar | ✅ Native, works today |
-| Start every session on Startpage (startup page / this extension) | ✅ Native |
-| Switch to a browser that allows custom defaults | 🔁 Brave/Chrome/Edge |
+| Address bar → `your query` | ➡️ Startpage results (URL bar briefly shows Google) |
+| Address bar → `sp your query` | ➡️ Startpage results (native keyword shortcut) |
+| New tab → search box | ➡️ Startpage results |
 
-> 💡 If Opera ever lifts this restriction, the manifest already carries the right declaration — nothing else to change.
+> 💡 If Opera ever lifts the restriction, the manifest already carries the right declaration and the override takes over — nothing else to change.
 
 ---
 
@@ -109,6 +110,16 @@ Cmd+T
         └─> tabs.onCreated fires with pendingUrl = chrome://startpageshared/
               └─> tabs.update(tabId, { url: "https://www.startpage.com/" })
                     └─> 🔒 Startpage
+```
+
+Address-bar searches take a second path:
+
+```text
+"how to delete cookies" + Enter
+  └─> Opera navigates to google.com/search?q=how+to+delete+cookies
+        └─> webNavigation.onBeforeNavigate fires (before Google answers)
+              └─> tabs.update → startpage.com/do/dsearch?query=how%20to%20delete%20cookies
+                    └─> 🔒 Startpage results
 ```
 
 `background.js` keeps a list of the internal new-tab URLs used across Chromium forks:
@@ -126,6 +137,18 @@ const NEW_TAB_PREFIXES = [
 ```
 
 A fallback `chrome_url_overrides` entry (`newtab.html`) is still shipped for browsers that do honour it.
+
+---
+
+## 🔐 Permissions
+
+| Permission | Why |
+| --- | --- |
+| `tabs` | Detect the new tab and navigate it to Startpage |
+| `webNavigation` | Catch the search navigation before it loads and rewrite it |
+| Host access to Google search domains | Read the `q=` parameter so the query can be forwarded to Startpage |
+
+No content scripts, no analytics, no remote code, and the query never reaches Google: the navigation is replaced client-side.
 
 ---
 
@@ -151,6 +174,7 @@ startpage-new-tab/
 | Symptom | Fix |
 | --- | --- |
 | New tab still shows Speed Dial | Make sure the extension is **enabled**, then hit **⟳ reload** on its card after editing files |
+| Address-bar searches still hit Google | Check the Google domain you're on is covered by `host_permissions` in `manifest.json` |
 | Extension is off after restarting Opera | Enable **Developer mode** again — Opera treats unpacked extensions as developer builds |
 | Redirect loop or blank page | Check `opera://extensions` → *service worker* → Inspect and read the console |
 | Works in normal windows, not incognito | Enable **Allow in private windows**; Chromium still limits extension behaviour in private mode |
